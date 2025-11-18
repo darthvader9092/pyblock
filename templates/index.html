@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Energy Blockchain Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-black bg-opacity-50 backdrop-blur-lg border-b border-purple-500 sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="text-3xl">⚡</div>
+                <div>
+                    <h1 class="text-2xl font-bold">Energy Chain</h1>
+                    <p class="text-xs text-gray-400">Decentralized Trading Platform</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="text-right">
+                    <p class="text-sm text-gray-400">Logged in as</p>
+                    <p class="font-bold text-purple-400">{{ user }}</p>
+                </div>
+                <div id="myBalance" class="bg-purple-900 bg-opacity-50 px-4 py-2 rounded-lg">
+                    <div class="text-xs text-gray-400">My Balance</div>
+                    <div class="font-bold">Loading...</div>
+                </div>
+                <a href="/logout" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="stat-card bg-gradient-to-br from-blue-600 to-blue-800">
+                <div class="text-3xl mb-2">📦</div>
+                <div class="text-3xl font-bold" id="totalBlocks">0</div>
+                <div class="text-sm opacity-80">Total Blocks</div>
+            </div>
+            <div class="stat-card bg-gradient-to-br from-green-600 to-green-800">
+                <div class="text-3xl mb-2">💸</div>
+                <div class="text-3xl font-bold" id="totalTxs">0</div>
+                <div class="text-sm opacity-80">Transactions</div>
+            </div>
+            <div class="stat-card bg-gradient-to-br from-purple-600 to-purple-800">
+                <div class="text-3xl mb-2">👥</div>
+                <div class="text-3xl font-bold" id="totalUsers">0</div>
+                <div class="text-sm opacity-80">Active Users</div>
+            </div>
+            <div class="stat-card bg-gradient-to-br from-orange-600 to-orange-800">
+                <div class="text-3xl mb-2">📄</div>
+                <div class="text-3xl font-bold" id="totalContracts">0</div>
+                <div class="text-sm opacity-80">Smart Contracts</div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Trade Form -->
+            <div class="glass-card">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>📝</span> Create Energy Trade
+                </h2>
+                <input id="seller" placeholder="Seller Username" class="input-field">
+                <input id="buyer" placeholder="Buyer Username" class="input-field">
+                <input id="energy" type="number" placeholder="Energy (kWh)" class="input-field">
+                <input id="price" type="number" placeholder="Total Price ($)" class="input-field">
+                <div class="text-sm text-gray-400 mb-4">
+                    Price per kWh: <span id="pricePerKwh">$0.00</span> (Max: $10.00)
+                </div>
+                <button onclick="addTrade()" class="btn-gradient-blue">
+                    Add to Trading Pool
+                </button>
+            </div>
+
+            <!-- Mining Panel -->
+            <div class="glass-card">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>⛏️</span> Mine Block
+                </h2>
+                <div class="bg-black bg-opacity-30 p-4 rounded-lg mb-4">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-400">Pending Transactions</span>
+                        <span id="pendingCount" class="font-bold text-yellow-400">0</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-400">Current Difficulty</span>
+                        <span id="currentDifficulty" class="font-bold text-purple-400">2</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Est. Reward</span>
+                        <span id="estReward" class="font-bold text-green-400">$20</span>
+                    </div>
+                </div>
+                <button onclick="mine()" class="btn-gradient-green">
+                    <span id="mineText">Start Mining</span>
+                </button>
+                <p id="mineStatus" class="mt-4 text-sm text-yellow-400"></p>
+            </div>
+
+            <!-- Balance Checker -->
+            <div class="glass-card">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>💰</span> Check Balance
+                </h2>
+                <input id="balanceUser" placeholder="Enter Username" class="input-field">
+                <button onclick="checkBalance()" class="btn-gradient-purple mb-4">
+                    Check Balance
+                </button>
+                <div id="balanceResult" class="bg-black bg-opacity-30 p-4 rounded-lg">
+                    <div class="text-center text-gray-400">Enter a username to check balance</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Smart Contract Creator -->
+        <div class="glass-card mb-6">
+            <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                <span>📜</span> Smart Contract Rules
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="rule-card">
+                    <div class="text-2xl mb-2">✅</div>
+                    <div class="font-bold">Energy Check</div>
+                    <div class="text-sm text-gray-400">Seller must have sufficient energy</div>
+                </div>
+                <div class="rule-card">
+                    <div class="text-2xl mb-2">💵</div>
+                    <div class="font-bold">Price Limit</div>
+                    <div class="text-sm text-gray-400">Max $10 per kWh</div>
+                </div>
+                <div class="rule-card">
+                    <div class="text-2xl mb-2">📊</div>
+                    <div class="font-bold">Min Trade</div>
+                    <div class="text-sm text-gray-400">Minimum 1 kWh</div>
+                </div>
+                <div class="rule-card">
+                    <div class="text-2xl mb-2">🚫</div>
+                    <div class="font-bold">No Self-Trade</div>
+                    <div class="text-sm text-gray-400">Cannot trade with yourself</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="glass-card">
+            <div class="flex gap-2 mb-6 border-b border-gray-700 overflow-x-auto">
+                <button onclick="showTab('chain')" class="tab-btn active" id="tab-chain">
+                    <span class="text-xl">⛓️</span> Blockchain
+                </button>
+                <button onclick="showTab('txs')" class="tab-btn" id="tab-txs">
+                    <span class="text-xl">💸</span> Transactions
+                </button>
+                <button onclick="showTab('pending')" class="tab-btn" id="tab-pending">
+                    <span class="text-xl">⏳</span> Pending Pool
+                </button>
+                <button onclick="showTab('contracts')" class="tab-btn" id="tab-contracts">
+                    <span class="text-xl">📜</span> Contracts
+                </button>
+            </div>
+
+            <div id="tab-content-chain" class="tab-content">
+                <button onclick="loadChain()" class="btn-gradient-orange mb-4">
+                    🔄 Refresh Chain
+                </button>
+                <div id="chainData" class="data-display"></div>
+            </div>
+
+            <div id="tab-content-txs" class="tab-content hidden">
+                <button onclick="loadTransactions()" class="btn-gradient-orange mb-4">
+                    🔄 Refresh Transactions
+                </button>
+                <div id="txData" class="data-display"></div>
+            </div>
+
+            <div id="tab-content-pending" class="tab-content hidden">
+                <button onclick="loadPending()" class="btn-gradient-orange mb-4">
+                    🔄 Refresh Pending
+                </button>
+                <div id="pendingData" class="data-display"></div>
+            </div>
+
+            <div id="tab-content-contracts" class="tab-content hidden">
+                <button onclick="loadContracts()" class="btn-gradient-orange mb-4">
+                    🔄 Refresh Contracts
+                </button>
+                <div id="contractData" class="data-display"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            loadStats();
+            loadMyBalance();
+            loadPending(); // To initialize pending count and difficulty/reward
+            // Initial load for the default active tab
+            loadChain(); 
+
+            // Calculate price per kWh dynamically
+            const energyInput = document.getElementById("energy");
+            const priceInput = document.getElementById("price");
+            const pricePerKwhSpan = document.getElementById("pricePerKwh");
+
+            const updatePricePerKwh = () => {
+                const energy = parseFloat(energyInput.value);
+                const price = parseFloat(priceInput.value);
+                if (energy > 0 && price >= 0) {
+                    pricePerKwhSpan.textContent = `$${(price / energy).toFixed(2)}`;
+                    if ((price / energy) > 10) {
+                        pricePerKwhSpan.classList.add("text-red-500");
+                        pricePerKwhSpan.classList.remove("text-green-500");
+                    } else {
+                        pricePerKwhSpan.classList.add("text-green-500");
+                        pricePerKwhSpan.classList.remove("text-red-500");
+                    }
+                } else {
+                    pricePerKwhSpan.textContent = "$0.00";
+                    pricePerKwhSpan.classList.remove("text-red-500", "text-green-500");
+                }
+            };
+
+            energyInput.addEventListener("input", updatePricePerKwh);
+            priceInput.addEventListener("input", updatePricePerKwh);
+        });
+
+        async function loadMyBalance() {
+            const res = await fetch("/my_balance");
+            const data = await res.json();
+            if (data.error) {
+                document.getElementById("myBalance").innerHTML = `<div class="text-xs text-gray-400">My Balance</div><div class="font-bold text-red-400">${data.error}</div>`;
+                return;
+            }
+            document.getElementById("myBalance").innerHTML = `
+                <div class="text-xs text-gray-400">My Balance</div>
+                <div class="font-bold">⚡ ${data.energy.toFixed(2)} kWh | 💰 $${data.currency.toFixed(2)}</div>
+            `;
+        }
+
+        async function loadStats() {
+            const res = await fetch("/stats");
+            const stats = await res.json();
+            document.getElementById("totalBlocks").textContent = stats.total_blocks;
+            document.getElementById("totalTxs").textContent = stats.total_transactions;
+            document.getElementById("totalUsers").textContent = stats.total_users;
+            document.getElementById("pendingCount").textContent = stats.pending_txs;
+            document.getElementById("currentDifficulty").textContent = stats.avg_difficulty.toFixed(0);
+            document.getElementById("estReward").textContent = `$${(10 * stats.avg_difficulty).toFixed(0)}`;
+            document.getElementById("totalContracts").textContent = stats.total_contracts;
+        }
+
+        async function addTrade() {
+            const seller = document.getElementById("seller").value;
+            const buyer = document.getElementById("buyer").value;
+            const energy = parseFloat(document.getElementById("energy").value);
+            const price = parseFloat(document.getElementById("price").value);
+
+            const res = await fetch("/add_tx", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({seller, buyer, energy, price})
+            });
+
+            const data = await res.json();
+            if (data.status === "added") {
+                alert("Transaction added to pending pool: " + data.message);
+                document.getElementById("seller").value = "";
+                document.getElementById("buyer").value = "";
+                document.getElementById("energy").value = "";
+                document.getElementById("price").value = "";
+                loadPending();
+            } else {
+                alert("Error adding transaction: " + data.error);
+            }
+        }
+
+        async function mine() {
+            const mineButton = document.querySelector(".btn-gradient-green");
+            const mineText = document.getElementById("mineText");
+            const mineStatus = document.getElementById("mineStatus");
+
+            mineButton.disabled = true;
+            mineText.textContent = "Mining...";
+            mineStatus.textContent = "Working hard to find a proof of work...";
+
+            const res = await fetch("/mine", { method: "POST" });
+            const data = await res.json();
+            
+            mineButton.disabled = false;
+            mineText.textContent = "Start Mining";
+
+            if (data.message) {
+                mineStatus.textContent = `✅ ${data.message}`;
+                loadStats();
+                loadMyBalance();
+                loadPending();
+                loadChain();
+                loadTransactions();
+            } else {
+                mineStatus.textContent = `❌ Error: ${data.error || "Something went wrong."}`;
+            }
+        }
+
+        async function checkBalance() {
+            const username = document.getElementById("balanceUser").value;
+            if (!username) {
+                document.getElementById("balanceResult").innerHTML = '<div class="text-center text-red-400">Please enter a username.</div>';
+                return;
+            }
+
+            const res = await fetch(`/balance/${username}`);
+            const data = await res.json();
+
+            if (data.error) {
+                document.getElementById("balanceResult").innerHTML = `<div class="text-center text-red-400">${data.error}</div>`;
+            } else {
+                document.getElementById("balanceResult").innerHTML = `
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-400">Username:</span>
+                        <span class="font-bold text-white">${username}</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-400">Energy:</span>
+                        <span class="font-bold text-green-400">⚡ ${data.energy.toFixed(2)} kWh</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Currency:</span>
+                        <span class="font-bold text-yellow-400">💰 $${data.currency.toFixed(2)}</span>
+                    </div>
+                `;
+            }
+        }
+
+        function showTab(tabId) {
+            document.querySelectorAll(".tab-content").forEach(content => {
+                content.classList.add("hidden");
+            });
+            document.querySelectorAll(".tab-btn").forEach(btn => {
+                btn.classList.remove("active");
+            });
+
+            document.getElementById(`tab-content-${tabId}`).classList.remove("hidden");
+            document.getElementById(`tab-${tabId}`).classList.add("active");
+
+            // Load data for the selected tab
+            if (tabId === 'chain') loadChain();
+            else if (tabId === 'txs') loadTransactions();
+            else if (tabId === 'pending') loadPending();
+            else if (tabId === 'contracts') loadContracts();
+        }
+
+        async function loadChain() {
+            const res = await fetch("/chain");
+            const chain = await res.json();
+            let html = "";
+            chain.forEach(block => {
+                const blockData = JSON.stringify(block.data, null, 2);
+                html += `
+                    <div class="block-card">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-lg font-semibold">Block #${block.index}</span>
+                            <span class="text-xs text-gray-400">${new Date(block.timestamp * 1000).toLocaleString()}</span>
+                        </div>
+                        <div class="text-sm">
+                            <p><strong>Hash:</strong> <span class="text-purple-400 break-all">${block.hash}</span></p>
+                            <p><strong>Previous:</strong> <span class="text-gray-500 break-all">${block.prev || 'N/A'}</span></p>
+                            <p><strong>Miner:</strong> <span class="text-blue-400">${block.miner}</span></p>
+                            <p><strong>Difficulty:</strong> ${block.difficulty}</p>
+                            <p><strong>Nonce:</strong> ${block.nonce}</p>
+                            <p><strong>Mining Time:</strong> ${block.mining_time ? block.mining_time.toFixed(2) + 's' : 'N/A'}</p>
+                        </div>
+                        <details class="mt-3">
+                            <summary class="cursor-pointer text-yellow-400 hover:text-yellow-300">Transactions (${block.data.length})</summary>
+                            <pre class="bg-gray-800 p-2 rounded-md text-xs mt-2 overflow-auto max-h-40">${blockData}</pre>
+                        </details>
+                    </div>
+                `;
+            });
+            document.getElementById("chainData").innerHTML = html || "<p class='text-center text-gray-400'>No blocks found.</p>";
+        }
+
+        async function loadTransactions() {
+            const res = await fetch("/transactions");
+            const txs = await res.json();
+            let html = "";
+            txs.forEach(tx => {
+                html += `
+                    <div class="tx-card">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold text-lg">${tx.seller} ➡️ ${tx.buyer}</span>
+                            <span class="text-xs text-gray-400">${new Date(tx.timestamp * 1000).toLocaleString()}</span>
+                        </div>
+                        <p><strong>Energy:</strong> <span class="text-green-400">${tx.energy.toFixed(2)} kWh</span></p>
+                        <p><strong>Price:</strong> <span class="text-yellow-400">$${tx.price.toFixed(2)}</span></p>
+                        <p><strong>Status:</strong> <span class="${tx.status === 'confirmed' ? 'text-blue-400' : 'text-orange-400'}">${tx.status}</span></p>
+                    </div>
+                `;
+            });
+            document.getElementById("txData").innerHTML = html || "<p class='text-center text-gray-400'>No transactions found.</p>";
+        }
+
+        async function loadPending() {
+            const res = await fetch("/pending");
+            const pending = await res.json();
+            let html = "";
+            pending.forEach(tx => {
+                html += `
+                    <div class="tx-card">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold text-lg">${tx.initiator || 'N/A'} ➡️ ${tx.buyer}</span>
+                            <span class="text-xs text-gray-400">Pending</span>
+                        </div>
+                        <p><strong>Energy:</strong> <span class="text-green-400">${tx.energy.toFixed(2)} kWh</span></p>
+                        <p><strong>Price:</strong> <span class="text-yellow-400">$${tx.price.toFixed(2)}</span></p>
+                        <p><strong>Seller:</strong> <span class="text-gray-400">${tx.seller}</span></p>
+                    </div>
+                `;
+            });
+            document.getElementById("pendingData").innerHTML = html || "<p class='text-center text-gray-400'>No pending transactions.</p>";
+            document.getElementById("pendingCount").textContent = pending.length;
+        }
+
+        async function loadContracts() {
+            const res = await fetch("/contracts");
+            const contracts = await res.json();
+            let html = "";
+            contracts.forEach(contract => {
+                const params = JSON.stringify(contract.params, null, 2);
+                html += `
+                    <div class="contract-card">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold text-lg">Contract ID: ${contract.id}</span>
+                            <span class="text-xs text-gray-400">${new Date(contract.created_at * 1000).toLocaleString()}</span>
+                        </div>
+                        <p><strong>Type:</strong> <span class="text-blue-400">${contract.contract_type}</span></p>
+                        <p><strong>Creator:</strong> <span class="text-purple-400">${contract.creator}</span></p>
+                        <p><strong>Status:</strong> <span class="text-green-400">${contract.status}</span></p>
+                        <details class="mt-3">
+                            <summary class="cursor-pointer text-yellow-400 hover:text-yellow-300">Parameters</summary>
+                            <pre class="bg-gray-800 p-2 rounded-md text-xs mt-2 overflow-auto max-h-40">${params}</pre>
+                        </details>
+                    </div>
+                `;
+            });
+            document.getElementById("contractData").innerHTML = html || "<p class='text-center text-gray-400'>No smart contracts found.</p>";
+            document.getElementById("totalContracts").textContent = contracts.length;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - Energy Blockchain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+        <h1 class="text-4xl font-bold text-center mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            ⚡ Energy Chain
+        </h1>
+        <p class="text-center text-gray-600 mb-8">Decentralized Energy Trading</p>
+        
+        <div class="mb-6">
+            <div class="flex gap-2 mb-6">
+                <button onclick="showLogin()" id="loginTab" class="flex-1 py-2 font-semibold text-blue-600 border-b-2 border-blue-600">Login</button>
+                <button onclick="showRegister()" id="registerTab" class="flex-1 py-2 font-semibold text-gray-400 border-b-2 border-transparent">Register</button>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="loginForm">
+                <input id="loginUsername" type="text" placeholder="Username" class="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <input id="loginPassword" type="password" placeholder="Password" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <button onclick="login()" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all">
+                    Login
+                </button>
+                <p class="text-sm text-gray-500 mt-4 text-center">Default admin: admin / admin123</p>
+            </div>
+            
+            <!-- Register Form -->
+            <div id="registerForm" class="hidden">
+                <input id="regUsername" type="text" placeholder="Username" class="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                <input id="regPassword" type="password" placeholder="Password" class="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                <select id="regRole" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    <option value="user">User</option>
+                    <option value="miner">Miner</option>
+                </select>
+                <button onclick="register()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all">
+                    Create Account
+                </button>
+            </div>
+        </div>
+        
+        <div id="message" class="text-center text-sm mt-4"></div>
+    </div>
+
+    <script>
+        function showLogin() {
+            document.getElementById("loginForm").classList.remove("hidden");
+            document.getElementById("registerForm").classList.add("hidden");
+            document.getElementById("loginTab").className = "flex-1 py-2 font-semibold text-blue-600 border-b-2 border-blue-600";
+            document.getElementById("registerTab").className = "flex-1 py-2 font-semibold text-gray-400 border-b-2 border-transparent";
+        }
+
+        function showRegister() {
+            document.getElementById("loginForm").classList.add("hidden");
+            document.getElementById("registerForm").classList.remove("hidden");
+            document.getElementById("loginTab").className = "flex-1 py-2 font-semibold text-gray-400 border-b-2 border-transparent";
+            document.getElementById("registerTab").className = "flex-1 py-2 font-semibold text-purple-600 border-b-2 border-purple-600";
+        }
+
+        async function login() {
+            const username = document.getElementById("loginUsername").value;
+            const password = document.getElementById("loginPassword").value;
+            
+            const res = await fetch("/login", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({username, password})
+            });
+            
+            const data = await res.json();
+            if (data.status === "success") {
+                window.location.href = data.role === "admin" ? "/admin" : "/";
+            } else {
+                document.getElementById("message").innerHTML = '<span class="text-red-600">❌ ' + data.message + '</span>';
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById("regUsername").value;
+            const password = document.getElementById("regPassword").value;
+            const role = document.getElementById("regRole").value;
+            
+            const res = await fetch("/register", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({username, password, role})
+            });
+            
+            const data = await res.json();
+            if (data.status === "success") {
+                document.getElementById("message").innerHTML = '<span class="text-green-600">✅ Account created! Please login.</span>';
+                showLogin();
+            } else {
+                document.getElementById("message").innerHTML = '<span class="text-red-600">❌ ' + data.message + '</span>';
+            }
+        }
+
+        // Enter key support
+        document.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                if (!document.getElementById("loginForm").classList.contains("hidden")) {
+                    login();
+                } else {
+                    register();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

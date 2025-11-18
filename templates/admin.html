@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel - Energy Blockchain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-zinc-800 to-gray-900 text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-black bg-opacity-50 backdrop-blur-lg border-b border-rose-500 sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="text-3xl">🔑</div>
+                <div>
+                    <h1 class="text-2xl font-bold">Admin Panel</h1>
+                    <p class="text-xs text-gray-400">Energy Chain Management</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="text-right">
+                    <p class="text-sm text-gray-400">Logged in as</p>
+                    <p class="font-bold text-rose-400">{{ user }} (Admin)</p>
+                </div>
+                <a href="/logout" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- Global Stats -->
+            <div class="glass-card">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>📊</span> Global Statistics
+                </h2>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div class="stat-item">Total Blocks: <span id="adminTotalBlocks" class="font-bold text-blue-400">0</span></div>
+                    <div class="stat-item">Total Transactions: <span id="adminTotalTxs" class="font-bold text-green-400">0</span></div>
+                    <div class="stat-item">Total Users: <span id="adminTotalUsers" class="font-bold text-purple-400">0</span></div>
+                    <div class="stat-item">Pending Transactions: <span id="adminPendingTxs" class="font-bold text-yellow-400">0</span></div>
+                    <div class="stat-item">Avg Difficulty: <span id="adminAvgDifficulty" class="font-bold text-orange-400">0</span></div>
+                    <div class="stat-item">Total Contracts: <span id="adminTotalContracts" class="font-bold text-pink-400">0</span></div>
+                </div>
+            </div>
+
+            <!-- Create User -->
+            <div class="glass-card">
+                <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <span>➕</span> Create New User
+                </h2>
+                <input id="newUsername" placeholder="Username" class="input-field">
+                <input id="newPassword" type="password" placeholder="Password" class="input-field">
+                <select id="newUserRole" class="input-field">
+                    <option value="user">User</option>
+                    <option value="miner">Miner</option>
+                    <option value="admin">Admin</option>
+                    <option value="consumer">Consumer</option>
+                    <option value="producer">Producer</option>
+                    <option value="prosumer">Prosumer</option>
+                </select>
+                <button onclick="createNewUser()" class="btn-gradient-rose">
+                    Create User Account
+                </button>
+                <p id="userCreationMessage" class="mt-4 text-sm"></p>
+            </div>
+        </div>
+
+        <!-- User Management Table -->
+        <div class="glass-card mb-6">
+            <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                <span>👥</span> User Management
+            </h2>
+            <button onclick="loadUsers()" class="btn-gradient-orange mb-4">
+                🔄 Refresh Users
+            </button>
+            <div class="data-display max-h-96 overflow-y-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">ID</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Username</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Role</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody" class="divide-y divide-gray-800">
+                        <!-- User rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- System Logs/Chain Validation -->
+        <div class="glass-card">
+            <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+                <span>⚙️</span> System Actions
+            </h2>
+            <button onclick="validateBlockchain()" class="btn-gradient-indigo mb-4">
+                ✅ Validate Blockchain (Server-Side)
+            </button>
+            <div id="validationResult" class="bg-black bg-opacity-30 p-4 rounded-lg text-sm">
+                <p class="text-gray-400">Click button to validate chain integrity.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            loadAdminStats();
+            loadUsers();
+        });
+
+        async function loadAdminStats() {
+            const res = await fetch("/stats");
+            const stats = await res.json();
+            document.getElementById("adminTotalBlocks").textContent = stats.total_blocks;
+            document.getElementById("adminTotalTxs").textContent = stats.total_transactions;
+            document.getElementById("adminTotalUsers").textContent = stats.total_users;
+            document.getElementById("adminPendingTxs").textContent = stats.pending_txs;
+            document.getElementById("adminAvgDifficulty").textContent = stats.avg_difficulty.toFixed(2);
+            document.getElementById("adminTotalContracts").textContent = stats.total_contracts;
+        }
+
+        async function createNewUser() {
+            const username = document.getElementById("newUsername").value;
+            const password = document.getElementById("newPassword").value;
+            const role = document.getElementById("newUserRole").value;
+            const messageDiv = document.getElementById("userCreationMessage");
+
+            if (!username || !password) {
+                messageDiv.innerHTML = '<span class="text-red-400">Username and password cannot be empty.</span>';
+                return;
+            }
+
+            const res = await fetch("/register", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({username, password, role})
+            });
+
+            const data = await res.json();
+            if (data.status === "success") {
+                messageDiv.innerHTML = '<span class="text-green-400">✅ User created successfully!</span>';
+                document.getElementById("newUsername").value = "";
+                document.getElementById("newPassword").value = "";
+                loadUsers(); // Refresh user list
+                loadAdminStats(); // Update user count
+            } else {
+                messageDiv.innerHTML = `<span class="text-red-400">❌ Error: ${data.message}</span>`;
+            }
+        }
+
+        async function loadUsers() {
+            const res = await fetch("/users");
+            if (res.status === 403) {
+                document.getElementById("userTableBody").innerHTML = '<tr><td colspan="4" class="text-center py-4 text-red-400">Unauthorized to view users.</td></tr>';
+                return;
+            }
+            const users = await res.json();
+            let html = "";
+            users.forEach(user => {
+                html += `
+                    <tr>
+                        <td class="px-4 py-2 whitespace-nowrap text-gray-300">${user.id}</td>
+                        <td class="px-4 py-2 whitespace-nowrap font-medium text-white">${user.username}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                ${user.role === 'admin' ? 'bg-rose-800 text-rose-100' : 
+                                   user.role === 'miner' ? 'bg-indigo-800 text-indigo-100' : 
+                                   user.role === 'consumer' ? 'bg-blue-800 text-blue-100' :
+                                   user.role === 'producer' ? 'bg-green-800 text-green-100' :
+                                   user.role === 'prosumer' ? 'bg-purple-800 text-purple-100' :
+                                   'bg-gray-800 text-gray-100'}">
+                                ${user.role.toUpperCase()}
+                            </span>
+                        </td>
+                        <td class="px-4 py-2 whitespace-nowrap text-gray-400">${new Date(user.created_at * 1000).toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById("userTableBody").innerHTML = html || '<tr><td colspan="4" class="text-center py-4 text-gray-400">No users found.</td></tr>';
+        }
+
+        // --- MODIFIED: Calls server-side validation with robust error handling ---
+        async function validateBlockchain() {
+            const resultDiv = document.getElementById("validationResult");
+            resultDiv.innerHTML = '<p class="text-yellow-400">Calling server for chain validation, please wait...</p>';
+
+            try {
+                const res = await fetch("/validate_blockchain_server");
+                
+                // Check if the response is OK (HTTP status 200-299)
+                if (!res.ok) {
+                    let errorMessage = `❌ Server Error: ${res.status} ${res.statusText}`;
+                    try {
+                        // Attempt to parse response as JSON, as Flask often sends JSON errors
+                        const errorData = await res.json();
+                        errorMessage = `❌ Server Error (${res.status}): ${errorData.error || 'Unknown error'}`;
+                    } catch (jsonParseError) {
+                        // If it's not JSON, get the raw text response
+                        const rawText = await res.text();
+                        errorMessage = `❌ Server Error (${res.status}): Non-JSON response. Content: "${rawText.substring(0, 100)}..."`;
+                    }
+                    resultDiv.innerHTML = `<p class="text-red-400">${errorMessage}</p>`;
+                    return;
+                }
+
+                // If response is OK, parse as JSON
+                const data = await res.json();
+
+                if (data.is_valid) {
+                    resultDiv.innerHTML = `<p class="text-green-400">✅ Blockchain is valid! (${data.message})</p>`;
+                } else {
+                    resultDiv.innerHTML = `<p class="text-red-400">❌ Blockchain validation failed: ${data.message}</p>`;
+                }
+            } catch (error) {
+                // This catch block handles network errors (e.g., server not reachable)
+                // or issues if `res.json()` fails on an empty or truly malformed response body
+                resultDiv.innerHTML = `<p class="text-red-400">❌ Network or Parsing Error: ${error.message}. Please check server console and browser network tab.</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
